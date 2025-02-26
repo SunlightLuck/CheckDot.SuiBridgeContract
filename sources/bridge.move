@@ -175,7 +175,7 @@ module bridge::checkdot_bridge_v1 {
 
         *(&mut bridge.bridge_fees_in_cdt) = bridge.bridge_fees_in_cdt + transfer_fees_in_cdt;
         let index = vector::length<Transfer>(&bridge.transfers);
-        let transfer_hash = get_hash(addr, ctx);
+        let transfer_hash = get_hash(addr, index, ctx);
 
         vector::push_back<Transfer>(&mut bridge.transfers, Transfer {
             hash: transfer_hash,
@@ -201,7 +201,9 @@ module bridge::checkdot_bridge_v1 {
         assert!(bridge.cdt_coin.value() >= amount, ERR_INSUFFICIENT_BALANCE);
         
         let coin = coin::take<CDT>(&mut bridge.cdt_coin, amount, ctx);
-        transfer::public_transfer(coin, ctx.sender());
+        transfer::public_transfer(coin, transfers_address);
+
+        table::add(&mut bridge.transfers_hashs, _transfers_hash, _transfers_hash);
     }
 
     public entry fun collect_cdt_fees(bridge: &mut Bridge, ctx: &mut TxContext) {
@@ -362,12 +364,14 @@ module bridge::checkdot_bridge_v1 {
         quantity * bridge.fees_in_cdt_percentage / 100
     }
 
-    fun get_hash(addr: address, ctx: &TxContext): vector<u8> {
+    fun get_hash(addr: address, index: u64, ctx: &TxContext): vector<u8> {
         let t = tx_context::epoch_timestamp_ms(ctx);
         let mut t_vec:vector<u8> = bcs::to_bytes<u64>(&t);
         let addr_vec:vector<u8> = bcs::to_bytes<address>(&addr);
+        let index_vec:vector<u8> = bcs::to_bytes<u64>(&index);
 
         vector::append(&mut t_vec, addr_vec);
+        vector::append(&mut t_vec, index_vec);
 
         return hash::keccak256(&t_vec)
     }
