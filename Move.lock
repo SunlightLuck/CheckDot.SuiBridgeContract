@@ -2,7 +2,7 @@
 
 [move]
 version = 3
-manifest_digest = "086E1C4B30C4CEEE7FF2BA2CAC6927FC72BB309FA8472C2C5F4384E71BDF806C"
+manifest_digest = "F68C30789EC0E043975F43A6EB3B9B02F4095DBD3FC3AC9532036F87E690C8BD"
 deps_digest = "F9B494B64F0615AED0E98FC12A85B85ECD2BC5185C22D30E7F67786BB52E507C"
 dependencies = [
   { id = "CetusClmm", name = "CetusClmm" },
@@ -13,7 +13,7 @@ dependencies = [
 
 [[move.package]]
 id = "CetusClmm"
-source = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", rev = "mainnet-v1.25.0", subdir = "sui/cetus_clmm" }
+source = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", rev = "mainnet-v1.26.0", subdir = "sui/cetus_clmm" }
 
 dependencies = [
   { id = "IntegerMate", name = "IntegerMate" },
@@ -59,6 +59,14 @@ dependencies = [
 ]
 
 [move.toolchain-version]
-compiler-version = "1.39.3"
+compiler-version = "1.44.0"
 edition = "2024.beta"
 flavor = "sui"
+
+[env]
+
+[env.mainnet]
+chain-id = "35834a8a"
+original-published-id = "0xbf5582bcc572653f0e3cd96234daed75a7a9e1c8fa6bd3edab50a1ea2ddf8414"
+latest-published-id = "0xbf5582bcc572653f0e3cd96234daed75a7a9e1c8fa6bd3edab50a1ea2ddf8414"
+published-version = "1"

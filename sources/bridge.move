@@ -10,6 +10,7 @@ module bridge::checkdot_bridge_v1 {
     use std::u256;
 
     use cdtToken::cdt::CDT;
+    use cetus_clmm::pool::{Self, Pool};
 
     const ERR_NOT_INITIALIZED: u64 = 100;
     const ERR_NOT_OWNER: u64 = 200;
@@ -151,7 +152,7 @@ module bridge::checkdot_bridge_v1 {
         bridge.unlock_ask_time = tx_context::epoch_timestamp_ms(ctx);
     }
 
-    public entry fun init_transfer<USD>(bridge: &mut Bridge, container: &mut flowx_v2::factory::Container, fee: Coin<SUI>, quantity: Coin<CDT>, to_chain: String, data: String, ctx: &mut TxContext) {
+    public entry fun init_transfer<USD>(bridge: &mut Bridge, pool: &Pool<USD, SUI>, fee: Coin<SUI>, quantity: Coin<CDT>, to_chain: String, data: String, ctx: &mut TxContext) {
         let addr = tx_context::sender(ctx);
 
         assert_is_actived(bridge);
@@ -159,7 +160,7 @@ module bridge::checkdot_bridge_v1 {
         assert!(quantity.value() >= bridge.minimum_transfer_quantity, ERR_INSUFFICIENT_QUANTITY);
 
         let transfer_sui_fees = fee.value();
-        let fees_sui = fees_in_sui<USD>(container, bridge);
+        let fees_sui = fees_in_sui<USD>(pool, bridge);
         assert!(transfer_sui_fees >= fees_sui, ERR_PAYMENT_ABORTED);
 
         let quantity_value = quantity.value();
@@ -324,8 +325,8 @@ module bridge::checkdot_bridge_v1 {
         vector::length(&bridge.transfers)
     }
     
-    public fun get_fees_in_sui<USD>(container: &flowx_v2::factory::Container, bridge: &Bridge): u64 {
-        fees_in_sui<USD>(container, bridge)
+    public fun get_fees_in_sui<USD>(pool: &Pool<USD, SUI>, bridge: &Bridge): u64 {
+        fees_in_sui<USD>(pool, bridge)
     }
 
     public fun get_fees_in_dollar(bridge: &Bridge): u64 {
@@ -340,17 +341,18 @@ module bridge::checkdot_bridge_v1 {
         bridge.paused
     }
 
-
-    fun fees_in_sui<USD>(container: &flowx_v2::factory::Container, bridge: &Bridge): u64 {
+    fun fees_in_sui<USD>(pool: &Pool<USD, SUI>, bridge: &Bridge): u64 {
 
         let fees_in_dollar = bridge.fees_in_dollar;
 
-        let pair = flowx_v2::factory::borrow_pair<SUI, USD>(container);
-        let (x_res, y_res) = flowx_v2::pair::get_reserves<SUI, USD>(pair);
+        let (coin_a, coin_b) = pool::balances(pool);
 
-        assert!(y_res > 0, ERR_ZERO_DIVISION);
+        let amount_a = balance::value(coin_a);
+        let amount_b = balance::value(coin_b);
 
-        let fees = (fees_in_dollar as u256) * (u256::pow(10, 6)) / (u256::pow(10, 9)) * (x_res as u256) / (y_res as u256);
+        assert!(amount_b > 0, ERR_ZERO_DIVISION);
+
+        let fees = (fees_in_dollar as u256) * (u256::pow(10, 6)) * (amount_a as u256) / (amount_b as u256);
 
         (fees as u64)
     }
